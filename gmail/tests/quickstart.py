@@ -1,6 +1,7 @@
 import os.path
 import email
 import base64
+from xhtml2pdf import pisa
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -50,14 +51,14 @@ class GmailService:
         for label in labels:
             print(label["name"])
     
-    def list_latest_emails(self, query):
+    def list_latest_emails(self, query, limit):
         results = self.service.users().messages().list(userId="me", q = query).execute()
         messages = results.get("messages", [])
 
         if not messages:
             print("No messages found.")
             return
-        return messages[0]['id']
+        return messages[:limit]
 
     def get_message(self, message_id):
         # get a message
@@ -72,13 +73,13 @@ class GmailService:
 
         # Find full message body
         # print("----------------------------------------------------")
-        # message_main_type = mime_msg.get_content_maintype()
-        # if message_main_type == 'multipart':
-        #     for part in mime_msg.get_payload():
-        #         if part.get_content_maintype() == 'text':
-        #             print(part.get_payload())
-        # elif message_main_type == 'text':
-        #     print(mime_msg.get_payload())
+        message_main_type = mime_msg.get_content_maintype()
+        if message_main_type == 'multipart':
+            for part in mime_msg.get_payload():
+                if part.get_content_maintype() == 'text':
+                    return mime_msg['subject'], part.get_payload()
+        elif message_main_type == 'text':
+            return mime_msg['subject'], mime_msg.get_payload()
         # print("----------------------------------------------------")
 
     def mark_email_as_read(self, message_id):
@@ -86,6 +87,15 @@ class GmailService:
 
         print(f'Mark email {message_id} as read!')
         return message_id
+    
+    def convert_message_to_pdf(self, message, pdf_path):
+        # Generate PDF
+        with open(pdf_path, "wb") as pdf_file:
+            pisa_status = pisa.CreatePDF(message, dest=pdf_file)
+            
+        if not pisa_status.err:
+            print(f'Email PDF generated at: {pdf_path}')
+        return not pisa_status.err
 
 def main():
     try:
@@ -95,10 +105,14 @@ def main():
         # GmailServiceClient.list_gmail_labels()
 
         # Get Last email
-        last_email_id = GmailServiceClient.list_latest_emails('in:inbox is:unread')
+        last_emails = GmailServiceClient.list_latest_emails('in:inbox is:unread', 10)
+        last_email_id = last_emails[0]['id']
         if last_email_id:
-            GmailServiceClient.get_message(last_email_id)
-            GmailServiceClient.mark_email_as_read(last_email_id)
+            subject, message = GmailServiceClient.get_message(last_email_id)
+            pdf_file = 'test_pdf'
+            pdfConvertStatus = GmailServiceClient.convert_message_to_pdf(message, f'./{pdf_file}.pdf')
+            if pdfConvertStatus:
+                GmailServiceClient.mark_email_as_read(last_email_id)
 
     except HttpError as error:
         # TODO(developer) - Handle errors from gmail API.
