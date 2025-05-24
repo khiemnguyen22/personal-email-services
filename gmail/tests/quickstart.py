@@ -47,8 +47,8 @@ class GmailService:
         for label in labels:
             print(label["name"])
     
-    def list_latest_emails(self):
-        results = self.service.users().messages().list(userId="me").execute()
+    def list_latest_emails(self, query):
+        results = self.service.users().messages().list(userId="me", q = query).execute()
         messages = results.get("messages", [])
 
         if not messages:
@@ -87,7 +87,7 @@ def main():
         # GmailServiceClient.list_gmail_labels()
 
         # Get Last email
-        last_email_id = GmailServiceClient.list_latest_emails()
+        last_email_id = GmailServiceClient.list_latest_emails('in:inbox is:unread')
         if last_email_id:
             GmailServiceClient.get_message(last_email_id)
 
