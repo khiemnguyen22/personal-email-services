@@ -9,7 +9,10 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
+SCOPES = [
+    'https://www.googleapis.com/auth/gmail.readonly',
+    'https://www.googleapis.com/auth/gmail.modify'
+]
 
 class GmailService:
     
@@ -67,17 +70,22 @@ class GmailService:
         print('To: ', mime_msg['to'])
         print('Subject: ',mime_msg['subject'])
 
-        print("----------------------------------------------------")
         # Find full message body
-        message_main_type = mime_msg.get_content_maintype()
-        if message_main_type == 'multipart':
-            for part in mime_msg.get_payload():
-                if part.get_content_maintype() == 'text':
-                    print(part.get_payload())
-        elif message_main_type == 'text':
-            print(mime_msg.get_payload())
-        print("----------------------------------------------------")
+        # print("----------------------------------------------------")
+        # message_main_type = mime_msg.get_content_maintype()
+        # if message_main_type == 'multipart':
+        #     for part in mime_msg.get_payload():
+        #         if part.get_content_maintype() == 'text':
+        #             print(part.get_payload())
+        # elif message_main_type == 'text':
+        #     print(mime_msg.get_payload())
+        # print("----------------------------------------------------")
 
+    def mark_email_as_read(self, message_id):
+        self.service.users().messages().modify(userId='me', id=message_id, body={'removeLabelIds': ['UNREAD']}).execute()
+
+        print(f'Mark email {message_id} as read!')
+        return message_id
 
 def main():
     try:
@@ -90,6 +98,7 @@ def main():
         last_email_id = GmailServiceClient.list_latest_emails('in:inbox is:unread')
         if last_email_id:
             GmailServiceClient.get_message(last_email_id)
+            GmailServiceClient.mark_email_as_read(last_email_id)
 
     except HttpError as error:
         # TODO(developer) - Handle errors from gmail API.
