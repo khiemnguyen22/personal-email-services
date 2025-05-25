@@ -2,6 +2,5 @@ outlook/__pycache__/config.cpython-310.pyc
 outlook/__pycache__/main.cpython-310.pyc
 outlook/config.py
 outlook/refresh_token.txt
-gmail/tests/credentials.json
-gmail/tests/token.json
-gmail/tests/test_pdf.pdf
+gmail/credentials.json
+gmail/token.json
