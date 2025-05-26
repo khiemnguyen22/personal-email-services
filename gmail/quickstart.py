@@ -2,6 +2,7 @@ import os.path
 import email
 import base64
 from xhtml2pdf import pisa
+import pdfkit
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -75,11 +76,13 @@ class GmailService:
         # print("----------------------------------------------------")
         message_main_type = mime_msg.get_content_maintype()
         if message_main_type == 'multipart':
+            full_message = ""
             for part in mime_msg.get_payload():
                 if part.get_content_maintype() == 'text':
-                    return mime_msg['subject'], part.get_payload()
+                    full_message += part.get_payload()
+            return mime_msg['subject'], '<pre>' + full_message + '</pre>'
         elif message_main_type == 'text':
-            return mime_msg['subject'], mime_msg.get_payload()
+            return mime_msg['subject'], '<pre>' + mime_msg.get_payload() + '</pre>'
         # print("----------------------------------------------------")
 
     def mark_email_as_read(self, message_id):
@@ -90,12 +93,18 @@ class GmailService:
     
     def convert_message_to_pdf(self, message, pdf_path):
         # Generate PDF
-        with open(pdf_path, "wb") as pdf_file:
-            pisa_status = pisa.CreatePDF(message, dest=pdf_file)
+        # with open(pdf_path, "wb") as pdf_file:
+            # pisa_status = pisa.CreatePDF(message, dest=pdf_file)
             
-        if not pisa_status.err:
-            print(f'Email PDF generated at: {pdf_path}')
-        return not pisa_status.err
+        # if not pisa_status.err:
+        #     print(f'Email PDF generated at: {pdf_path}')
+        # return not pisa_status.err
+        try:
+            with open(pdf_path, "wb") as pdf_file:
+                pdfkit.from_string(message, pdf_path)
+            return True
+        except:
+            return False
 
 def main():
     try:
