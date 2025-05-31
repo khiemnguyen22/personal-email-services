@@ -4,3 +4,4 @@ outlook/config.py
 outlook/refresh_token.txt
 gmail/credentials.json
 gmail/token.json
+gmail/test_file.txt

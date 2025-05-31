@@ -3,6 +3,8 @@ import email
 import base64
 from xhtml2pdf import pisa
 import pdfkit
+import html2text
+import io 
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -92,7 +94,16 @@ class GmailService:
         return message_id
 
     def extract_text_from_message(self, message, txt_path):
-        pass 
+        try:
+            print('text output: ', html2text.html2text(message))
+            with io.open(txt_path, "w", encoding="utf-8") as f:
+                f.write(message)
+            
+            print(f'Text file generated at: {txt_path}')
+            return True
+        except Exception as e:
+            print('error writing to file ', e)
+            return False
 
     def convert_message_to_pdf(self, message, pdf_path):
         # Generate PDF
@@ -121,10 +132,14 @@ def main():
         last_email_id = last_emails[0]['id']
         if last_email_id:
             subject, message = GmailServiceClient.get_message(last_email_id)
-            pdf_file = 'test_pdf'
-            pdfConvertStatus = GmailServiceClient.convert_message_to_pdf(message, f'./{pdf_file}.pdf')
-            if pdfConvertStatus:
+            output_file = 'test_file'
+            pdfConvertStatus = GmailServiceClient.convert_message_to_pdf(message, f'./{output_file}.pdf')
+            
+            txtExtractStatus = GmailServiceClient.extract_text_from_message(message, f'./{output_file}.txt')
+            
+            if txtExtractStatus or pdfConvertStatus:
                 GmailServiceClient.mark_email_as_read(last_email_id)
+
 
     except HttpError as error:
         # TODO(developer) - Handle errors from gmail API.
