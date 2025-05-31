@@ -79,7 +79,7 @@ class GmailService:
             full_message = ""
             for part in mime_msg.get_payload():
                 if part.get_content_maintype() == 'text':
-                    full_message += part.get_payload()
+                    full_message += part.get_payload(decode=True).decode(part.get_content_charset())
             return mime_msg['subject'], '<pre>' + full_message + '</pre>'
         elif message_main_type == 'text':
             return mime_msg['subject'], '<pre>' + mime_msg.get_payload() + '</pre>'
@@ -90,21 +90,24 @@ class GmailService:
 
         print(f'Mark email {message_id} as read!')
         return message_id
-    
+
+    def extract_text_from_message(self, message, txt_path):
+        pass 
+
     def convert_message_to_pdf(self, message, pdf_path):
         # Generate PDF
-        # with open(pdf_path, "wb") as pdf_file:
-            # pisa_status = pisa.CreatePDF(message, dest=pdf_file)
+        with open(pdf_path, "wb") as pdf_file:
+            pisa_status = pisa.CreatePDF(message, dest=pdf_file)
             
-        # if not pisa_status.err:
-        #     print(f'Email PDF generated at: {pdf_path}')
-        # return not pisa_status.err
-        try:
-            with open(pdf_path, "wb") as pdf_file:
-                pdfkit.from_string(message, pdf_path)
-            return True
-        except:
-            return False
+        if not pisa_status.err:
+            print(f'Email PDF generated at: {pdf_path}')
+        return not pisa_status.err
+        # try:
+        #     with open(pdf_path, "wb") as pdf_file:
+        #         pdfkit.from_string(message, pdf_path)
+        #     return True
+        # except:
+        #     return False
 
 def main():
     try:
