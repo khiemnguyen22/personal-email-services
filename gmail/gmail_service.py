@@ -5,6 +5,8 @@ from xhtml2pdf import pisa
 import pdfkit
 import html2text
 import io 
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -92,6 +94,41 @@ class GmailService:
         print(f'Mark email {message_id} as read!')
         return message_id
 
+    def forward_email(self, message_id: str, forward_to: str):
+        try:
+            # Get the original message
+            original_message = self.service.users().messages().get(userId='me', id=message_id, format='full').execute()
+
+            # Extract original headers and body
+            payload = original_message.get('payload', {})
+            headers = payload.get('headers', [])
+            subject = next((h['value'] for h in headers if h['name'] == 'Subject'), '(No Subject)')
+            from_email = next((h['value'] for h in headers if h['name'] == 'From'), '')
+            snippet = original_message.get('snippet', '')
+            
+            # Create the email content
+            msg = MIMEMultipart()
+            msg['to'] = forward_to
+            msg['subject'] = f"Fwd: {subject}"
+
+            body = f"Forwarded message:\nFrom: {from_email}\n\n{snippet}"
+            msg.attach(MIMEText(body, 'plain'))
+
+            raw_message = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+
+            # Send the email
+            message = {
+                'raw': raw_message
+            }
+            sent_message = self.service.users().messages().send(userId='me', body=message).execute()
+
+            print(f"Message forwarded to {forward_to}. Message ID: {sent_message['id']}")
+            return sent_message
+
+        except Exception as e:
+            print(f"An error occurred while forwarding the email: {e}")
+            return None
+        
     def extract_text_from_message(self, message, txt_path):
         try:
             print('text output: ', html2text.html2text(message))

@@ -14,6 +14,7 @@ def main():
         last_email_id = last_emails[0]['id']
         if last_email_id:
             subject, message = GmailServiceClient.get_message(last_email_id)
+            message = GmailServiceClient.forward_email(last_email_id, 'knguyen23in2024@gmail.com')
             output_file = 'test_file'
             pdfConvertStatus = GmailServiceClient.convert_message_to_pdf(message, f'./{output_file}.pdf')
             
